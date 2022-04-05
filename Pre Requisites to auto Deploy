@@ -1,0 +1,5 @@
+Create an IAM ROLE for EC2 and attach a policy name AmazonEC2RoleforAWSCodeDeploy so that EC2 can access or connect with Code Deploy agent. This will be used in ec2 instance.
+Create and IAM Service Role and attach a policy  AWSCodeDeployRole policy with CodeDeploy permissions that grants AWS CodeDeploy access to your target instances.  THis will be used in CodeDeploy service role.
+
+
+We will be using Code Deploy Code Commit and Code Pipeline
