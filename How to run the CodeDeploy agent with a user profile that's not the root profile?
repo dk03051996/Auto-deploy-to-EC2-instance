@@ -1,0 +1,119 @@
+How to run the CodeDeploy agent with a user profile that's not the root profile?
+
+
+
+
+Short description
+To run the CodeDeploy agent with a user profile that's not the root profile, do the following:
+
+1.    (Prerequisite) Verify that the CodeDeploy agent is installed on your Amazon Elastic Compute Cloud (Amazon EC2) instance.
+
+2.    Change the user in your CodeDeploy agent configuration file and grant the user the required permissions.
+
+3.    Create an Amazon EC2 launch configuration template and Auto Scaling group to automate the user change process.
+
+4.    Test the setup by verifying that the CodeDeploy agent is installed and running with the correct user on your Amazon EC2 instance.
+
+Note: These steps apply to instances that use the Amazon Linux 1 or Amazon Linux 2 Amazon Machine Image (AMI). However, the Amazon Linux 1 AMI is in maintenance support status. In this status, the AMI receives only receive critical and important security updates for a reduced set of packages. The AMI is also no longer guaranteed to support new EC2 platform capabilities or new AWS features.
+
+Resolution
+Note: If you receive errors when running AWS Command Line Interface (AWS CLI) commands, make sure that you're using the most recent AWS CLI version.
+
+(Prerequisite) Verify that the CodeDeploy agent is installed on your Amazon EC2 instance
+Follow the instructions in Verify the CodeDeploy agent is running in the CodeDeploy User Guide.
+
+For instructions on how to install the CodeDeploy agent, see Install the CodeDeploy agent.
+
+Change the user in your CodeDeploy agent configuration file and grant the user the required permissions
+1.    Connect to your Amazon EC2 instance using SSH.
+
+2.    Stop the CodeDeploy host agent that's installed on the instance by running the following command:
+
+sudo service codedeploy-agent stop
+3.    Change the user in the CodeDeploy agent configuration file by running the following sed stream editor command:
+
+Important: Replace ec2-user with the user name that you want the CodeDeploy host agent to run on.
+
+sudo sed -i 's/""/"ec2-user"/g' /etc/init.d/codedeploy-agent
+Important: For Amazon Linux 2 AMIs, you must also run the following two commands:
+
+sudo sed -i 's/#User=codedeploy/User=ec2-user/g' /usr/lib/systemd/system/codedeploy-agent.service
+sudo systemctl daemon-reload
+4.    Grant the new user permissions to the required directories by running the following two commands:
+
+Important: Replace ec2-user with the user name that you want the CodeDeploy host agent to run on.
+
+sudo chown ec2-user:ec2-user -R /opt/codedeploy-agent/
+sudo chown ec2-user:ec2-user -R /var/log/aws/
+5.    Restart the CodeDeploy agent and confirm that your updates to the configuration file were successful by running the following two commands:
+
+sudo service codedeploy-agent start
+sudo service codedeploy-agent status
+Successful command output example
+
+The AWS CodeDeploy agent is running as PID ####
+6.    Verify what processes are running and which user is running these processes by running the following command:
+
+ps aux | grep codedeploy-agent
+Create an Amazon EC2 launch configuration template and Auto Scaling group to automate the user change process
+To confirm that the CodeDeploy agent is installed and running with the correct user when new instances are launched, do the following:
+
+1.    Open the Amazon EC2 console.
+
+2.    On the navigation pane, choose Launch Configurations.
+
+3.    Choose Create launch configuration.
+
+4.    Select the Amazon Linux AMI.
+
+5.    Choose Next: Configure details.
+
+6.    For IAM role, choose a preconfigured AWS Identity and Access Management (IAM) role. The role must grant your EC2 instance permission to access Amazon Simple Storage Service (Amazon S3) resources.
+
+7.    Choose Advanced Details.
+
+8.    In the User data section of the agent configuration file, enter the commands to install the CodeDeploy agent. Then, update the file to use a specific user.
+
+Agent configuration file example
+
+Important: Replace ec2-user with the user name that you want the CodeDeploy host agent to run on. The following example code runs automatically when a new instance is launched that's using the defined launch configuration.
+
+#!/bin/bash
+REGION=$(curl 169.254.169.254/latest/meta-data/placement/availability-zone/ | sed 's/[a-z]$//')
+yum -y update
+yum install ruby wget -y
+cd /home/ec2-user
+wget https://aws-codedeploy-$REGION.s3.amazonaws.com/latest/install
+chmod +x ./install
+./install auto
+service codedeploy-agent stop
+#adduser username <--- this is only required if you use a username that does not already exist
+sed -i 's/""/"ec2-user"/g' /etc/init.d/codedeploy-agent
+#sed -i 's/#User=codedeploy/User=ec2-user/g' /usr/lib/systemd/system/codedeploy-agent.service  <--- Uncomment this line for Amazon Linux 2
+systemctl daemon-reload
+chown ec2-user:ec2-user -R /opt/codedeploy-agent/
+chown ec2-user:ec2-user -R /var/log/aws/
+service codedeploy-agent start
+9.    Complete the remaining steps in the AWS Launch Wizard as needed. Then, choose Create launch configuration.
+
+10.    Choose Create an Auto Scaling group using this launch configuration.
+
+11.    For Group name, enter a name for your Auto Scaling group.
+
+12.    For Subnet, enter a subnet that allows your instance to access the internet.
+
+13.    Choose Next: Configure scaling policies. Then, choose a policy based on your needs.
+
+14.    Complete the rest of the steps in the Launch Wizard. Then, choose Create Auto Scaling Group.
+
+Test the setup by verifying that the CodeDeploy agent is installed and running with the correct user on a new Amazon EC2 instance
+Confirm that your Amazon EC2 instance is running. Then, do the following:
+
+1.    Connect to your Amazon EC2 instance using SSH.
+
+2.    Verify that the CodeDeploy agent is running on the Amazon EC2 instance by running the following command:
+
+sudo service codedeploy-agent status
+3.    Verify that the CodeDeploy agent is running on the correct user name by running the following command:
+
+ps aux | grep codedeploy-agent
