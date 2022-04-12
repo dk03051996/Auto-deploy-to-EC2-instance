@@ -1,7 +1,7 @@
 Install the CodeDeploy agent for Ubuntu Server 20.04
 
 sudo apt update
-sudo apt-get install ruby2.0
+sudo apt install ruby-full
 sudo apt-fet install wget
 
  sudo wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install
