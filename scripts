@@ -1,0 +1,22 @@
+nano runscript.sh
+#!/bin/bash
+cd /home/ubuntu/dashboardapi
+
+git pull origin sblive
+
+
+nano start_script.sh
+#!/bin/bash
+
+cd /home/ubuntu/dashboardapi
+
+sudo npm i
+
+
+nano stop_server.sh
+#!/bin/bash
+
+#cd home/ubuntu/dashboard-admin-panel
+
+
+#pm2 stop 0
