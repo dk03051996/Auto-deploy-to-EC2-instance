@@ -7,6 +7,21 @@ files:
     destination: destination-file-location-1
 file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 
+---------------------------------
+version: 0.0
+os: linux
+
+hooks:
+  ApplicationStart:
+    - location: scripts/start_server.sh
+      timeout: 300
+  BeforeInstall:
+    - location: scripts/runscript.sh
+      timeout: 300
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 300
+
 
 https://docs.aws.amazon.com/codedeploy/latest/userguide/tutorials-wordpress-configure-content.html
 
